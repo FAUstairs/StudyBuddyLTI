@@ -1,5 +1,8 @@
 # StudyBuddyLTI
 
+<img width="1829" height="733" alt="Screenshot from 2026-11-07 22-17-26" src="https://github.com/user-attachments/assets/b3ed66a6-ea31-4801-9980-2803dab883d6" />
+
+
 Standalone Next.js application for the Study Buddy LTI tool.
 
 ## Run locally
