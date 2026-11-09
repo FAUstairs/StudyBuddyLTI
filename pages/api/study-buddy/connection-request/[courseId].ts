@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { addRequest } from '../../../../lib/study-buddy-store';
+import { recordStudyBuddyChange } from '../../../../lib/study-buddy-store';
 import {
   checkIfPostOrSetError,
   getApiErrorResponse,
@@ -18,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    addRequest(context.scope, String(receiverId));
-
+    await addRequest(context.scope, String(receiverId));
+    await recordStudyBuddyChange(context.scope);
     res.status(204).end();
   } catch (error) {
     console.error(error);

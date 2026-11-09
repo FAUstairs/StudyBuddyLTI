@@ -4,6 +4,7 @@ import type { LaunchDetails } from './lti';
 
 const cookieName = 'alea_lti_launch';
 const maxAgeSeconds = 60 * 60 * 4;
+const oidcStateCookieName = 'alea_lti_oidc_state';
 
 export type LtiLaunchSession = LaunchDetails & {
   userId: string;
@@ -22,12 +23,45 @@ export function setLtiLaunchSessionCookie(res: NextApiResponse, details: LaunchD
   };
   const value = signSession(session);
 
-  const isHttps = process.env.LTI_TOOL_BASE_URL?.startsWith('https://') ?? false;
+  const isHttps = process.env.LTI_REDIRECT_URI?.startsWith('https://') ?? false;
   const sameSite = isHttps ? 'None' : 'Lax';
   const secure = isHttps ? '; Secure' : '';
-  res.setHeader('Set-Cookie', [
+  appendSetCookie(
+    res,
     `${cookieName}=${value}; Path=/; HttpOnly; SameSite=${sameSite}${secure}; Max-Age=${maxAgeSeconds}`,
-  ]);
+  );
+}
+
+export function setOidcLoginState(res: NextApiResponse, state: string, nonce: string) {
+  const payload = Buffer.from(JSON.stringify({ state, nonce })).toString('base64url');
+  const value = `${payload}.${signPayload(payload)}`;
+  appendSetCookie(
+    res,
+    `${oidcStateCookieName}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`,
+  );
+}
+
+export function consumeOidcLoginState(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  state: string,
+) {
+  const signedValue = parseCookies(req.headers.cookie ?? '')[oidcStateCookieName];
+  if (!signedValue) return undefined;
+  appendSetCookie(
+    res,
+    `${oidcStateCookieName}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`,
+  );
+
+  const [payload, signature] = signedValue.split('.');
+  if (!payload || !signature || !timingSafeEqual(signature, signPayload(payload))) {
+    return undefined;
+  }
+  const value = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
+    state: string;
+    nonce: string;
+  };
+  return value.state === state ? value : undefined;
 }
 
 export function getLtiLaunchSession(req: NextApiRequest) {
@@ -64,8 +98,31 @@ function signPayload(payload: string) {
   return crypto.createHmac('sha256', getSessionSecret()).update(payload).digest('base64url');
 }
 
+function timingSafeEqual(actual: string, expected: string) {
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+  return (
+    actualBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(actualBuffer, expectedBuffer)
+  );
+}
+
+function appendSetCookie(res: NextApiResponse, cookie: string) {
+  const current = res.getHeader('Set-Cookie');
+  const cookies = Array.isArray(current)
+    ? current.map(String)
+    : current
+      ? [String(current)]
+      : [];
+  res.setHeader('Set-Cookie', [...cookies, cookie]);
+}
+
 function getSessionSecret() {
-  return process.env.LTI_SESSION_SECRET ?? 'development-lti-session-secret';
+  const secret = process.env.FLASK_SECRET_KEY;
+  if (!secret) {
+    throw new Error('Environment variable FLASK_SECRET_KEY is not set.');
+  }
+  return secret;
 }
 
 function parseCookies(cookieHeader: string) {

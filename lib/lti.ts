@@ -13,6 +13,8 @@ const resourceLinkClaim = 'https://purl.imsglobal.org/spec/lti/claim/resource_li
 const targetLinkUriClaim = 'https://purl.imsglobal.org/spec/lti/claim/target_link_uri';
 const versionClaim = 'https://purl.imsglobal.org/spec/lti/claim/version';
 const customClaim = 'https://purl.imsglobal.org/spec/lti/claim/custom';
+const launchPresentationClaim =
+  'https://purl.imsglobal.org/spec/lti/claim/launch_presentation';
 
 export type LaunchContext = {
   id: string;
@@ -38,15 +40,42 @@ export type LaunchDetails = {
   courseId: string;
   institutionId: string;
   instanceId: string;
+  locale: string;
 };
 
 export function getLaunchUser(payload: Record<string, unknown>): LaunchUser {
+  const givenName = getClaimString(payload.given_name);
+  const familyName = getClaimString(payload.family_name);
+  const fullName =
+    [givenName, familyName].filter(Boolean).join(' ') ||
+    getClaimString(payload.name);
+  const custom = getObjectClaim(payload[customClaim]);
+  const email = [
+    payload.email,
+    payload.email_address,
+    payload.mail,
+    custom?.email,
+    custom?.email_address,
+  ]
+    .map(getClaimString)
+    .find((value) => isUsableEmail(value));
+
   return {
-    name: String(payload.name ?? payload.given_name ?? 'Not provided'),
-    email: String(payload.email ?? 'Not provided'),
-    id: String(payload.sub ?? 'Not provided'),
+    name: fullName || 'Not provided',
+    email: email ?? 'Not provided',
+    id: getClaimString(payload.sub) ?? 'Not provided',
     role: 'unknown',
   };
+}
+
+function getClaimString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function isUsableEmail(value: string | undefined) {
+  if (!value || !value.includes('@')) return false;
+  const domain = value.split('@').at(-1)?.toLowerCase();
+  return domain !== undefined && !domain.endsWith('.ilias');
 }
 
 export function getLaunchRoles(payload: Record<string, unknown>) {
@@ -68,6 +97,7 @@ export function getLaunchDetails(payload: Record<string, unknown>): LaunchDetail
   const courseId = getCourseId(context, resourceLink, custom);
   const institutionId = getCustomValue(custom, 'institution_id', 'institutionId') || platformIssuer || 'lti';
   const instanceId = getCustomValue(custom, 'instance_id', 'instanceId') || deploymentId || context?.id || 'lti-instance';
+  const locale = getLaunchLocale(payload);
 
   return {
     platformIssuer,
@@ -85,6 +115,7 @@ export function getLaunchDetails(payload: Record<string, unknown>): LaunchDetail
     courseId,
     institutionId,
     instanceId,
+    locale,
   };
 }
 
@@ -151,6 +182,12 @@ function getLaunchResourceLink(payload: Record<string, unknown>) {
 
 function getLaunchCustom(payload: Record<string, unknown>) {
   return getObjectClaim(payload[customClaim]);
+}
+
+function getLaunchLocale(payload: Record<string, unknown>) {
+  const launchPresentation = getObjectClaim(payload[launchPresentationClaim]);
+  const locale = launchPresentation?.locale;
+  return typeof locale === 'string' && locale.trim() ? locale : 'en';
 }
 
 function getObjectClaim(value: unknown) {

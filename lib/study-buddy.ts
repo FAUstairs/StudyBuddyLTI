@@ -1,12 +1,16 @@
 export enum MeetType {
-  Online = 'Online',
-  InPerson = 'In person',
-  Both = 'Online or in person',
+  Online = 'Virtual',
+  InPerson = 'Physical',
+  Both = 'Both',
 }
 
 export enum Languages {
-  Deutsch = 'German',
+  Deutsch = 'Deutsch',
   Englisch = 'English',
+  Arabic = 'Arabic',
+  French = 'French',
+  Spanish = 'Spanish',
+  Others = 'Others',
 }
 
 export type StudyBuddy = {
@@ -19,7 +23,7 @@ export type StudyBuddy = {
   email: string;
   meetType: MeetType;
   dayPreference: string;
-  languages: Languages;
+  languages: string;
   active: boolean;
 };
 
@@ -46,6 +50,14 @@ export async function getStudyBuddyList(courseId: string, institutionId: string,
   return request<GetStudyBuddiesResponse>(
     `/api/study-buddy/get-study-buddies/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`
   );
+}
+
+export function getStudyBuddyEventsUrl(
+  courseId: string,
+  institutionId: string,
+  instanceId: string
+) {
+  return `/api/study-buddy/events/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`;
 }
 
 export async function updateStudyBuddyInfo(
@@ -76,6 +88,13 @@ export async function connectionRequest(courseId: string, receiverId: string, in
 
 export async function removeConnectionRequest(courseId: string, receiverId: string, institutionId: string, instanceId: string) {
   return request<void>(`/api/study-buddy/remove-connection-request/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ receiverId }),
+  });
+}
+
+export async function disconnectStudyBuddy(courseId: string, receiverId: string, institutionId: string, instanceId: string) {
+  return request<void>(`/api/study-buddy/disconnect/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
     method: 'POST',
     body: JSON.stringify({ receiverId }),
   });

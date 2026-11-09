@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!context) return;
 
   try {
-    const result = getList(context.scope);
+    const result = await getList(context.scope);
     res.status(200).json(result);
   } catch (error) {
     console.error(error);

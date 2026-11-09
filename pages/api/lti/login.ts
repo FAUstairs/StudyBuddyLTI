@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
+import { setOidcLoginState } from '../../../lib/lti-session';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET' && req.method !== 'POST') {
@@ -9,12 +10,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const params = req.method === 'POST' ? req.body : req.query;
-  const { login_hint, lti_message_hint, client_id } = params;
-  const authorizationEndpoint = process.env.LTI_PLATFORM_AUTH_URL;
-  const resolvedClientId = String(client_id || process.env.LTI_CLIENT_ID || '');
+  const { iss, login_hint, lti_message_hint } = params;
+  const authorizationEndpoint = process.env.LTI_PLATFORM_AUTHORIZATION_ENDPOINT;
+  const resolvedClientId = process.env.LTI_CLIENT_ID ?? '';
+  const platformIssuer = process.env.LTI_PLATFORM_ISSUER ?? 'http://localhost';
 
   if (!authorizationEndpoint) {
-    res.status(500).send('Missing LTI_PLATFORM_AUTH_URL');
+    res.status(500).send('Missing LTI_PLATFORM_AUTHORIZATION_ENDPOINT');
     return;
   }
 
@@ -28,9 +30,16 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
 
+  if (iss && String(iss) !== platformIssuer) {
+    res.status(403).send('Unknown LTI platform issuer');
+    return;
+  }
+
   const state = crypto.randomBytes(16).toString('hex');
   const nonce = crypto.randomBytes(16).toString('hex');
-  const redirectUri = `${getBaseUrl(req)}/api/lti/launch`;
+  setOidcLoginState(res, state, nonce);
+  const redirectUri =
+    process.env.LTI_REDIRECT_URI ?? `${getBaseUrl(req)}/api/lti/launch`;
   const url = new URL(authorizationEndpoint);
 
   url.searchParams.set('scope', 'openid');

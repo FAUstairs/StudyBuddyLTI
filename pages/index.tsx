@@ -1,4 +1,6 @@
-const baseUrl = (process.env.NEXT_PUBLIC_LTI_TOOL_BASE_URL ?? 'http://localhost:4200').replace(/\/+$/, '');
+const baseUrl = (
+  process.env.LTI_TOOL_BASE_URL ?? 'http://localhost:4200'
+).replace(/\/+$/, '');
 
 const urls = [
   ['OIDC login URL', `${baseUrl}/api/lti/login`],

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { setUserActive } from '../../../../lib/study-buddy-store';
+import { recordStudyBuddyChange } from '../../../../lib/study-buddy-store';
 import {
   checkIfPostOrSetError,
   getApiErrorResponse,
@@ -18,8 +19,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    setUserActive(context.scope, Boolean(active));
+    const updated = await setUserActive(context.scope, Boolean(active));
+    if (!updated) {
+      res.status(404).send('Study Buddy profile not found');
+      return;
+    }
 
+    await recordStudyBuddyChange(context.scope);
     res.status(204).end();
   } catch (error) {
     console.error(error);

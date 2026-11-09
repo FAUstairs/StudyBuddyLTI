@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!context) return;
 
   try {
-    const result = getUser(context.scope);
+    const result = await getUser(context.scope);
     if (!result) {
       res.status(404).end();
       return;
