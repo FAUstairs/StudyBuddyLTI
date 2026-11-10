@@ -56,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       instanceId: launchDetails.instanceId,
     });
 
-    res.redirect(303, `/study-buddy?${query}`);
+    res.redirect(303, `/StudyBuddy/study-buddy?${query}`);
   } catch (error) {
     res.status(403).send(error instanceof Error ? error.message : 'Launch validation failed');
   }

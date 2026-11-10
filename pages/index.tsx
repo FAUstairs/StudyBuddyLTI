@@ -1,5 +1,5 @@
 const baseUrl = (
-  process.env.LTI_TOOL_BASE_URL ?? 'http://localhost:4200'
+  process.env.LTI_TOOL_BASE_URL ?? 'https://studon-staging.kwarc.info/StudyBuddy'
 ).replace(/\/+$/, '');
 
 const urls = [

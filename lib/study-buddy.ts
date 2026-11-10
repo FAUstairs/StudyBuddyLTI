@@ -1,3 +1,6 @@
+
+const BASE_PATH = '/StudyBuddy';
+
 export enum MeetType {
   Online = 'Virtual',
   InPerson = 'Physical',
@@ -34,6 +37,7 @@ export type GetStudyBuddiesResponse = {
   other: StudyBuddy[];
 };
 
+// Benutzerinformationen abrufen
 export async function getStudyBuddyUserInfo(
   courseId: string,
   institutionId: string,
@@ -46,63 +50,132 @@ export async function getStudyBuddyUserInfo(
   );
 }
 
-export async function getStudyBuddyList(courseId: string, institutionId: string, instanceId: string) {
+// Liste aller StudyBuddies abrufen
+export async function getStudyBuddyList(
+  courseId: string,
+  institutionId: string,
+  instanceId: string
+) {
   return request<GetStudyBuddiesResponse>(
     `/api/study-buddy/get-study-buddies/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`
   );
 }
 
+// EventSource-URL für Live-Updates
 export function getStudyBuddyEventsUrl(
   courseId: string,
   institutionId: string,
   instanceId: string
 ) {
-  return `/api/study-buddy/events/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`;
+  return `${BASE_PATH}/api/study-buddy/events/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`;
 }
 
+// Benutzerinformationen aktualisieren
 export async function updateStudyBuddyInfo(
   courseId: string,
   studyBuddy: StudyBuddy,
   institutionId: string,
   instanceId: string
 ) {
-  return request<void>(`/api/study-buddy/update-info/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
-    method: 'POST',
-    body: JSON.stringify(studyBuddy),
-  });
+  return request<void>(
+    `/api/study-buddy/update-info/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(studyBuddy),
+    }
+  );
 }
 
-export async function setActive(courseId: string, active: boolean, institutionId: string, instanceId: string) {
-  return request<void>(`/api/study-buddy/set-active/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ active }),
-  });
+// Aktivitätsstatus ändern
+export async function setActive(
+  courseId: string,
+  active: boolean,
+  institutionId: string,
+  instanceId: string
+) {
+  return request<void>(
+    `/api/study-buddy/set-active/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ active }),
+    }
+  );
 }
 
-export async function connectionRequest(courseId: string, receiverId: string, institutionId: string, instanceId: string) {
-  return request<void>(`/api/study-buddy/connection-request/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ receiverId }),
-  });
+// Verbindungsanfrage senden
+export async function connectionRequest(
+  courseId: string,
+  receiverId: string,
+  institutionId: string,
+  instanceId: string
+) {
+  return request<void>(
+    `/api/study-buddy/connection-request/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ receiverId }),
+    }
+  );
 }
 
-export async function removeConnectionRequest(courseId: string, receiverId: string, institutionId: string, instanceId: string) {
-  return request<void>(`/api/study-buddy/remove-connection-request/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ receiverId }),
-  });
+// Verbindungsanfrage entfernen
+export async function removeConnectionRequest(
+  courseId: string,
+  receiverId: string,
+  institutionId: string,
+  instanceId: string
+) {
+  return request<void>(
+    `/api/study-buddy/remove-connection-request/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ receiverId }),
+    }
+  );
 }
 
-export async function disconnectStudyBuddy(courseId: string, receiverId: string, institutionId: string, instanceId: string) {
-  return request<void>(`/api/study-buddy/disconnect/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`, {
-    method: 'POST',
-    body: JSON.stringify({ receiverId }),
-  });
+// Verbindung trennen
+export async function disconnectStudyBuddy(
+  courseId: string,
+  receiverId: string,
+  institutionId: string,
+  instanceId: string
+) {
+  return request<void>(
+    `/api/study-buddy/disconnect/${encodeURIComponent(courseId)}?institutionId=${encodeURIComponent(institutionId)}&instanceId=${encodeURIComponent(instanceId)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ receiverId }),
+    }
+  );
 }
 
-async function request<T>(url: string, init?: RequestInit, notFoundIsEmpty = false): Promise<T> {
-  const response = await fetch(url, { ...init, headers: { 'Content-Type': 'application/json' } });
-  if (notFoundIsEmpty && response.status === 404) return undefined as T;
-  if (!response.ok) throw new Error(await response.text() || `Request failed (${response.status})`);
-  return response.status === 204 ? undefined as T : response.json();
+// Zentrale Funktion für alle API-Anfragen
+async function request<T>(
+  url: string,
+  init?: RequestInit,
+  notFoundIsEmpty = false
+): Promise<T> {
+  const response = await fetch(`${BASE_PATH}${url}`, {
+    ...init,
+    headers: {
+      ...init?.headers,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (notFoundIsEmpty && response.status === 404) {
+    return undefined as T;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      (await response.text()) ||
+        `Request failed (${response.status})`
+    );
+  }
+
+  return response.status === 204
+    ? (undefined as T)
+    : response.json();
 }

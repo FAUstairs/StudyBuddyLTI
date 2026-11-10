@@ -104,7 +104,7 @@ function StudyBuddyForm({
   const [studyPrograms, setStudyPrograms] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('/api/study-programs')
+    fetch('/StudyBuddy/api/study-programs')
       .then(async (response) => {
         if (!response.ok) throw new Error(uiText.errors.loadStudyPrograms);
         return response.json() as Promise<string[]>;
