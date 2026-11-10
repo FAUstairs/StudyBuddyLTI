@@ -96,3 +96,7 @@ mysql -h "$MYSQL_HOST" -P "$MYSQL_PORT" -u "$MYSQL_USER" \
 Das Schema ist mit den Tabellen `StudyBuddyUsers` und
 `StudyBuddyConnections` aus der Originalimplementierung in
 `ALeA/packages/lti-application` kompatibel.
+
+
+## Serverbetrieb
+In index.tsx change `http://localhost:4200/StudyBuddy` to `https://studon-staging.kwarc.info/StudyBuddy` 

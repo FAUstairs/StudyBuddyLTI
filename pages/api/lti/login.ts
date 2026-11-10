@@ -38,8 +38,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const state = crypto.randomBytes(16).toString('hex');
   const nonce = crypto.randomBytes(16).toString('hex');
   setOidcLoginState(res, state, nonce);
-  const redirectUri =
-    process.env.LTI_REDIRECT_URI ?? `${getBaseUrl(req)}/api/lti/launch`;
+  const redirectUri = getRedirectUri(req);
   const url = new URL(authorizationEndpoint);
 
   url.searchParams.set('scope', 'openid');
@@ -57,6 +56,17 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   res.redirect(302, url.toString());
+}
+
+function getRedirectUri(req: NextApiRequest) {
+  const configuredUri = process.env.LTI_REDIRECT_URI ?? `${getBaseUrl(req)}/api/lti/launch`;
+  const redirectUri = new URL(configuredUri);
+
+  if (!redirectUri.pathname.startsWith('/StudyBuddy/')) {
+    redirectUri.pathname = `/StudyBuddy${redirectUri.pathname.startsWith('/') ? '' : '/'}${redirectUri.pathname}`;
+  }
+
+  return redirectUri.toString();
 }
 
 function getBaseUrl(req: NextApiRequest) {
